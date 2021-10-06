@@ -5,9 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.database.ContentObserver;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -17,13 +14,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hyber_task.adapters.ItemAdapter;
-import com.example.hyber_task.interfaces.OnItemClickListner;
-import com.example.hyber_task.models.Item;
 import com.example.hyber_task.view_models.ItemViewModel;
 
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -54,7 +47,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-    private DownloadManager manager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,30 +60,13 @@ public class MainActivity extends AppCompatActivity {
         viewModel.setContext(this);
         viewModel.getItemsFromRepository();
         itemAdapter = new ItemAdapter(new ArrayList<>(), this, position -> {
-            Log.i(TAG, "onItemClick: position Clicked :" + position);
             if (position == 2) {
                 viewModel.getItemsList().getValue().get(position).setUrl(viewModel.getItemsList().getValue().get(position).getUrl().replace("(", ""));
             }
             viewModel.getItemsList().getValue().get(position).setDownloading(true);
-            
+
             viewModel.downloadFileFromRepository(position);
             itemAdapter.notifyItemChanged(position);
-
-//            try {
-//
-//                manager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
-//                DownloadManager.Request request = new DownloadManager.Request(url);
-//                request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE);
-//                request.setVisibleInDownloadsUi(true);
-//                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
-//                long reference = manager.enqueue(request);
-//                getPrecentage(reference, position);
-//                Log.i(TAG, "onItemClick: id start" + reference);
-//                viewModel.getItemsList().getValue().get(position).setDownloadID(reference);
-//
-//            } catch (Exception e) {
-//                Log.i(TAG, "onBindViewHolder: " + e.getMessage());
-//            }
 
         });
 
@@ -103,33 +78,5 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void getPrecentage(Long id, int position) {
-        final double[] progress = {0.0};
-       Timer timer= new Timer();
-       timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                DownloadManager.Query query = new DownloadManager.Query();
-                query.setFilterById(id);
 
-                Cursor c = manager.query(query);
-                if (c.moveToFirst()) {
-                    int sizeIndex = c.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES);
-                    int downloadedIndex = c.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR);
-                    long size = c.getInt(sizeIndex);
-                    long downloaded = c.getInt(downloadedIndex);
-                    if (size != -1) progress[0] = downloaded * 100.0 / size;
-                    viewModel.getItemsList().getValue().get(position).setDownloadPercentage((int) progress[0]);
-                    if (progress[0] ==100){
-                        timer.cancel();
-
-                    }
-
-
-                }
-            }
-        }, 0, 100);//put here time 1000 milliseconds=1 second
-
-        // At this point you have the progress as a percentage.
-    }
 }
