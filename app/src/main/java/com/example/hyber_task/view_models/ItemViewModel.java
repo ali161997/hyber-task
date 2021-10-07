@@ -1,6 +1,7 @@
 package com.example.hyber_task.view_models;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
 import android.os.Environment;
 import android.util.Log;
 import android.widget.Toast;
@@ -46,6 +47,11 @@ public class ItemViewModel extends ViewModel {
     public Context getContext() {
         return context;
     }
+    public boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        return cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnected();
+    }
 
     public void setContext(Context context) {
         this.context = context;
@@ -76,8 +82,8 @@ public class ItemViewModel extends ViewModel {
 
     public void downloadFileFromRepository(int position) {
         @NonNull Observable<ResponseBody> disposable = repository.getFile(itemsList.getValue().get(position).getUrl())
-                .subscribeOn(Schedulers.io());
-//                .observeOn(AndroidSchedulers.mainThread());
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
 
 
         Observer<ResponseBody> observer = new Observer<ResponseBody>() {
@@ -92,13 +98,20 @@ public class ItemViewModel extends ViewModel {
                     Toast.makeText(context, "cannot download ,file length =-1", Toast.LENGTH_LONG).show();
                     return;
                 }
-//
+                Thread thread = new Thread(() -> {
+                    try {
                         String[] name = itemsList.getValue().get(position).getUrl().split("/");
                         writeResponseBodyToDisk(responseBody, name[name.length - 1], position);
                         itemsList.getValue().get(position).setDownloaded(true);
                         itemsList.getValue().get(position).setDownloading(false);
                         itemsList.postValue(itemsList.getValue());
                         Log.d(TAG, "run: ok");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+
+                thread.start();
 
 
             }

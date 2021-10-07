@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -15,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hyber_task.adapters.ItemAdapter;
 import com.example.hyber_task.view_models.ItemViewModel;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 
 import java.util.ArrayList;
 
@@ -28,36 +31,22 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private ItemViewModel viewModel;
     private ItemAdapter itemAdapter;
-    private final BroadcastReceiver onDownloadComplete = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            //Fetching the download id received with the broadcast
-            long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
-            for (int i = 0; viewModel.getItemsList().getValue().size() > i; i++) {
-                try {
-                    if (viewModel.getItemsList().getValue().get(i).getDownloadID() == id) {
-                        Log.i(TAG, "onReceive: " + i + " " + id);
-                        viewModel.getItemsList().getValue().get(i).setDownloaded(true);
-                        viewModel.getItemsList().getValue().get(i).setDownloading(false);
-                        itemAdapter.notifyItemChanged(i);
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "onReceive: " + e.getMessage());
-                }
-            }
-        }
-    };
+    private CircularProgressIndicator progressIndicator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        registerReceiver(onDownloadComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
         recyclerView = findViewById(R.id.recycler_view);
+        progressIndicator=findViewById(R.id.progress_main);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(linearLayoutManager);
         viewModel = new ViewModelProvider(this).get(ItemViewModel.class);
         viewModel.setContext(this);
+        if(!viewModel.isNetworkConnected()){
+            progressIndicator.setVisibility(View.GONE);
+            Toast.makeText(this,"No Internet Available",Toast.LENGTH_LONG).show();
+        }
         viewModel.getItemsFromRepository();
         itemAdapter = new ItemAdapter(new ArrayList<>(), this, position -> {
             if (position == 2) {
@@ -73,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(itemAdapter);
         viewModel.getItemsList().observe(this, items -> {
             itemAdapter.setList(items);
+            progressIndicator.setVisibility(View.GONE);
             itemAdapter.notifyDataSetChanged();
         });
 
