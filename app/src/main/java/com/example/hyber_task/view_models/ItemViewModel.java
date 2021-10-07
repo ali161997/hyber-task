@@ -76,8 +76,8 @@ public class ItemViewModel extends ViewModel {
 
     public void downloadFileFromRepository(int position) {
         @NonNull Observable<ResponseBody> disposable = repository.getFile(itemsList.getValue().get(position).getUrl())
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread());
+                .subscribeOn(Schedulers.io());
+//                .observeOn(AndroidSchedulers.mainThread());
 
 
         Observer<ResponseBody> observer = new Observer<ResponseBody>() {
@@ -92,20 +92,13 @@ public class ItemViewModel extends ViewModel {
                     Toast.makeText(context, "cannot download ,file length =-1", Toast.LENGTH_LONG).show();
                     return;
                 }
-                Thread thread = new Thread(() -> {
-                    try {
+//
                         String[] name = itemsList.getValue().get(position).getUrl().split("/");
                         writeResponseBodyToDisk(responseBody, name[name.length - 1], position);
                         itemsList.getValue().get(position).setDownloaded(true);
                         itemsList.getValue().get(position).setDownloading(false);
                         itemsList.postValue(itemsList.getValue());
                         Log.d(TAG, "run: ok");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-
-                thread.start();
 
 
             }

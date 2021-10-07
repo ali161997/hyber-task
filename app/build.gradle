@@ -64,8 +64,4 @@ dependencies {
     //sdp
     implementation 'com.intuit.sdp:sdp-android:1.0.6'
 
-    implementation 'com.github.barteksc:android-pdf-viewer:2.8.2'
-    def nav_version = "2.3.5"
-    implementation "androidx.navigation:navigation-fragment:$nav_version"
-    implementation "androidx.navigation:navigation-ui:$nav_version"
 }
